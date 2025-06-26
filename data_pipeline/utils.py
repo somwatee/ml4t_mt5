@@ -4,11 +4,12 @@ import logging
 from pathlib import Path
 
 def load_config(path: str) -> dict:
-    """โหลดค่าต่าง ๆ จาก config.yaml เป็น dict"""
+    """โหลดค่าต่าง ๆ จาก config.yaml เป็น dict (อ่านด้วย encoding UTF-8)"""
     p = Path(path)
     if not p.exists():
         raise FileNotFoundError(f"{path} ไม่พบไฟล์")
-    return yaml.safe_load(p.read_text())
+    text = p.read_text(encoding='utf-8')
+    return yaml.safe_load(text)
 
 def get_logger(name: str) -> logging.Logger:
     """สร้าง logger ชื่อ name พร้อมตั้งระดับ INFO และ format"""

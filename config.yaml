@@ -1,71 +1,74 @@
 # config.yaml
 
 data:
-  historical_csv: data/history.csv       # ไฟล์เก็บข้อมูลราคาย้อนหลัง
-  features_csv: data/features.csv        # ไฟล์เก็บฟีเจอร์ที่คำนวณแล้ว
-  signals_json: data/signals.json        # ไฟล์เก็บสัญญาณพรีดิกต์
+  historical_csv: data/history.csv    # ไฟล์เก็บข้อมูลราคาย้อนหลัง
+  features_csv: data/features.csv     # ไฟล์เก็บผลลัพธ์ฟีเจอร์
+  signals_json: data/signals.json     # ไฟล์เก็บสัญญาณพรีดิกต์
 
 models:
-  xgb_model: models/xgb_model.pkl        # ไฟล์โมเดล XGBoost
-  label_classes: models/xgb_model.pkl    # ไฟล์เดียวกับ xgb_model เก็บคลาสของโมเดล
+  xgb_model: models/xgb_model.pkl     # โมเดล XGBoost
+  label_classes: models/xgb_model.pkl # ไฟล์เดียวกันเก็บคลาสต่าง ๆ
 
 mt5:
-  login: 25214081                        # รหัสบัญชี MT5
-  password: "h3MqkJ8>O%2G"               # รหัสผ่าน MT5
-  server: "demo.mt5tickmill.com"         # เซิร์ฟเวอร์ MT5
-  symbol: "XAUUSD"                       # สัญลักษณ์ที่เทรด
-  timeframe: 1                           # Timeframe: 1 = M1
-  bars_to_fetch: 50000                   # จำนวนแท่งข้อมูลย้อนหลัง
-  contract_size: 100                     # ขนาดสัญญา
-  reconnect_timeout: 10                  # วินาทีก่อนรีคอนเน็คท์ใหม่
+  login: 25214081                     # MT5 account login
+  password: "h3MqkJ8>O%2G"            # MT5 account password
+  server: "demo.mt5tickmill.com"      # MT5 server name
+  symbol: "XAUUSD"                    # สัญลักษณ์
+  timeframe: "M1"           # Timeframe: 1 = M1
+  bars_to_fetch: 500   #50000                # จำนวนแท่งข้อมูลย้อนหลัง
+  contract_size: 100                  # ขนาดสัญญา
+  reconnect_timeout: 10               # วินาทีก่อน reconnect ใหม่
 
 features:
   ict:
-    mss_lookback: 5                      # จำนวนแท่งย้อนหลังสำหรับ MSS
-    fvg_threshold: 0.5                   # ค่าทริกเกอร์สำหรับ FVG
-    atr_period: 14                       # พารามิเตอร์ ATR
-    rsi_period: 14                       # พารามิเตอร์ RSI
+    mss_lookback: 5                   # lookback สำหรับ MSS
+    fvg_threshold: 0.5                # threshold สำหรับ FVG
+    atr_period: 14                    # ATR period
+    rsi_period: 14                    # RSI period
   smc:
-    order_block_size: 8                  # ขนาดหน้าต่าง Order Block
-    liquidity_void_depth: 20             # ความลึก Liquidity Void
-    breaker_block_lookback: 5            # ย้อนหลังสำหรับ Breaker Block
+    order_block_size: 8               # window size สำหรับ Order Block
+    liquidity_void_depth: 20          # depth สำหรับ Liquidity Void
+    breaker_block_lookback: 5         # lookback สำหรับ Breaker Block
+  trend_filter:
+    h1_ema_period: 14                 # period ของ EMA สำหรับ trend_h1
 
 training:
-  test_size: 0.2                         # สัดส่วนข้อมูลทดสอบ (hold-out)
-  random_state: 42                       # ค่า seed สำหรับการสุ่ม
+  test_size: 0.2                      # สัดส่วนข้อมูล test (hold-out)
+  random_state: 42                    # seed สำหรับสุ่ม
+  predict_threshold: 0.65             # threshold สำหรับยืนยันสัญญาณ
   xgb_params:
     max_depth: 4
     n_estimators: 100
     learning_rate: 0.1
 
 cv:
-  window_size: 6    # เดือนสำหรับหน้าต่าง train
-  test_size: 1      # เดือนสำหรับหน้าต่าง test
-  step_size: 1      # เดือนที่เลื่อนไปข้างหน้าทุกรอบ
+  window_size: 6                      # เดือนสำหรับ train window
+  test_size: 1                        # เดือนสำหรับ test window
+  step_size: 1                        # เดือนเลื่อนไปข้างหน้าทุก fold
 
 tuning:
   param_grid:
     max_depth: [3,4,5]
     n_estimators: [50,100,200]
-    learning_rate: [0.01, 0.1]
-  cv_folds: 5       # จำนวน fold สำหรับ TimeSeriesSplit
+    learning_rate: [0.01,0.1]
+  cv_folds: 5                         # folds สำหรับ TimeSeriesSplit
 
 ensemble:
   estimators:
-    - ["xgb", "models/xgb_model.pkl"]
+    - ["xgb",  "models/xgb_model.pkl"]
     - ["lgbm", "models/lgbm_model.pkl"]
-    - ["rf",  "models/rf_model.pkl"]
-  voting: soft      # วิธีโหวต: soft
-  weights: [2,1,1]  # น้ำหนักของแต่ละโมเดล
+    - ["rf",   "models/rf_model.pkl"]
+  voting: soft                        # soft voting
+  weights: [2,1,1]                    # น้ำหนักของแต่ละโมเดล
 
 live:
-  throttle_mins: 1          # นาทีต่อการพรีดิกต์ครั้งหนึ่ง
-  max_trades_per_day: 20    # จำนวนออร์เดอร์สูงสุดต่อวัน
-  time_stop_mins: 240       # นาทีสูงสุดที่ถือออร์เดอร์
-  min_profit_atr: 1.0       # กำไรขั้นต่ำ (ATR) ที่เริ่ม trailing
-  trailing_multiplier: 1.5  # ทวีคูณ ATR สำหรับ trailing stop
-  max_risk_pct: 0.025       # ความเสี่ยงสูงสุด (%)
-  sl_multiplier: 2.0        # SL = ATR × ค่านี้
-  tp2_multiplier: 2.5       # TP2 = ATR × ค่านี้
+  throttle_mins: 1                    # นาทีต่อ 1 รอบพรีดิกต์
+  max_trades_per_day: 20              # จำนวนออร์เดอร์สูงสุดต่อวัน
+  time_stop_mins: 240                 # ปิดออร์เดอร์อัตโนมัติหลังถือครบเวลา
+  min_profit_atr: 1.0                 # กำไรขั้นต่ำ (ATR) ก่อนเริ่ม trailing
+  trailing_multiplier: 1.5            # ทวีคูณ ATR สำหรับ trailing stop
+  max_risk_pct: 0.025                 # ความเสี่ยงสูงสุด (%)
+  sl_multiplier: 2.0                  # SL = ATR × ค่านี้
+  tp2_multiplier: 2.5                 # TP2 = ATR × ค่านี้
 
-dry_run: false   # ถ้า true จะไม่ส่งคำสั่งจริง
+dry_run: false                        # true = ไม่ส่งคำสั่งจริง  

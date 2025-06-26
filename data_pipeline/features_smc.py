@@ -8,13 +8,16 @@ def compute_order_block(df: pd.DataFrame, size: int) -> pd.Series:
         if i < size:
             flags.append(0)
             continue
-        tr = df.at[i, 'trend_h1']
+        # อ่าน trend_h1 ด้วย .iat สำหรับตำแหน่ง i
+        tr = df['trend_h1'].iat[i]
         if tr < 0:
-            win = df['high'].iloc[i-size:i]
-            flags.append(1 if df['high'].iat[i] <= win.max() else 0)
+            window_highs = df['high'].iloc[i-size:i]
+            curr_high = df['high'].iat[i]
+            flags.append(1 if curr_high <= window_highs.max() else 0)
         else:
-            win = df['low'].iloc[i-size:i]
-            flags.append(-1 if df['low'].iat[i] >= win.min() else 0)
+            window_lows = df['low'].iloc[i-size:i]
+            curr_low = df['low'].iat[i]
+            flags.append(-1 if curr_low >= window_lows.min() else 0)
     return pd.Series(flags, index=df.index)
 
 def compute_liquidity_void(df: pd.DataFrame, depth: int) -> pd.Series:
@@ -24,11 +27,12 @@ def compute_liquidity_void(df: pd.DataFrame, depth: int) -> pd.Series:
         if i < depth:
             flags.append(0)
             continue
-        tr = df.at[i, 'trend_h1']
-        rng = df['high'].iloc[i-depth:i] - df['low'].iloc[i-depth:i]
-        curr = df.at[i, 'high'] - df.at[i, 'low']
-        thr = rng.max() * 0.2
-        if curr < thr:
+        tr = df['trend_h1'].iat[i]
+        window = df.iloc[i-depth:i]
+        rng = window['high'] - window['low']
+        curr_range = df['high'].iat[i] - df['low'].iat[i]
+        threshold = rng.max() * 0.2
+        if curr_range < threshold:
             flags.append(1 if tr < 0 else -1)
         else:
             flags.append(0)
@@ -41,12 +45,14 @@ def compute_breaker_block(df: pd.DataFrame, lookback: int) -> pd.Series:
         if i < lookback + 1:
             flags.append(0)
             continue
-        prev_high = df['high'].iloc[i-lookback-1:i-1].max()
-        prev_low  = df['low'].iloc[i-lookback-1:i-1].min()
-        o,c = df.at[i, 'open'], df.at[i, 'close']
-        if c < o and o > prev_high:
+        prev_window = df.iloc[i-lookback-1:i-1]
+        prev_high = prev_window['high'].max()
+        prev_low = prev_window['low'].min()
+        open_i = df['open'].iat[i]
+        close_i = df['close'].iat[i]
+        if close_i < open_i and open_i > prev_high:
             flags.append(-1)
-        elif c > o and o < prev_low:
+        elif close_i > open_i and open_i < prev_low:
             flags.append(1)
         else:
             flags.append(0)
