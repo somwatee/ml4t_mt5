@@ -1,6 +1,8 @@
+# data_pipeline/features_ict.py
 import pandas as pd
 
 def compute_mss(df: pd.DataFrame, lookback: int) -> pd.Series:
+    """Market Structure Shift: 1=สูงทะลุ, -1=ต่ำทะลุ, 0=ไม่เปลี่ยน"""
     highs = df['high'].rolling(window=lookback+1).max().shift(1)
     lows  = df['low'].rolling (window=lookback+1).min().shift(1)
     mss = pd.Series(0, index=df.index)
@@ -9,9 +11,7 @@ def compute_mss(df: pd.DataFrame, lookback: int) -> pd.Series:
     return mss.fillna(0).astype(int)
 
 def compute_fvg(df: pd.DataFrame, threshold: float) -> pd.Series:
-    # ตัวอย่างใช้ absolute gap
+    """Fair Value Gap: |open–close_prev| > threshold×ATR"""
     gap = (df['open'] - df['close'].shift()).abs()
-    # flag เมื่อ gap > threshold × ATR (ATR ต้องคำนวณก่อนใน features.py)
-    # สมมติว่า df มีคอลัมน์ 'atr'
     fvg = (gap > threshold * df['atr']).astype(int)
     return fvg.fillna(0).astype(int)

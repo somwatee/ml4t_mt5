@@ -1,26 +1,22 @@
+# data_pipeline/utils.py
 import yaml
 import logging
 from pathlib import Path
 
 def load_config(path: str) -> dict:
-    """
-    Load YAML config from given path.
-    """
+    """โหลดค่าต่าง ๆ จาก config.yaml เป็น dict"""
     p = Path(path)
     if not p.exists():
-        raise FileNotFoundError(f"Config file not found: {path}")
-    with open(p, 'r', encoding='utf-8') as f:
-        return yaml.safe_load(f)
+        raise FileNotFoundError(f"{path} ไม่พบไฟล์")
+    return yaml.safe_load(p.read_text())
 
-def get_logger(name: str, level: int = logging.INFO) -> logging.Logger:
-    """
-    Return a logger that prints to console.
-    """
-    logger = logging.getLogger(name)
-    if not logger.handlers:
+def get_logger(name: str) -> logging.Logger:
+    """สร้าง logger ชื่อ name พร้อมตั้งระดับ INFO และ format"""
+    log = logging.getLogger(name)
+    if not log.handlers:
         handler = logging.StreamHandler()
-        fmt = "%(asctime)s %(levelname)s [%(name)s] %(message)s"
-        handler.setFormatter(logging.Formatter(fmt))
-        logger.addHandler(handler)
-    logger.setLevel(level)
-    return logger
+        formatter = logging.Formatter("[%(asctime)s][%(name)s][%(levelname)s] %(message)s")
+        handler.setFormatter(formatter)
+        log.addHandler(handler)
+        log.setLevel(logging.INFO)
+    return log

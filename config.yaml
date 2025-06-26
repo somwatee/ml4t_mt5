@@ -1,72 +1,71 @@
+# config.yaml
+
 data:
-  historical_csv: "data/historical.csv"
-  features_csv:   "data/data_with_features.csv"
-  signals_json:   "data/signals.json"
+  historical_csv: data/history.csv       # ไฟล์เก็บข้อมูลราคาย้อนหลัง
+  features_csv: data/features.csv        # ไฟล์เก็บฟีเจอร์ที่คำนวณแล้ว
+  signals_json: data/signals.json        # ไฟล์เก็บสัญญาณพรีดิกต์
 
 models:
-  xgb_model:     "models/xgb_model.json"
-  label_classes: "models/label_classes.pkl"
+  xgb_model: models/xgb_model.pkl        # ไฟล์โมเดล XGBoost
+  label_classes: models/xgb_model.pkl    # ไฟล์เดียวกับ xgb_model เก็บคลาสของโมเดล
 
 mt5:
-  # terminal_path: "C:/Program Files/MetaTrader 5/terminal64.exe"
-  login:             25214081
-  password:          "h3MqkJ8>O%2G"
-  server:            "demo.mt5tickmill.com"
-  reconnect_timeout: 10
-  symbol:            "XAUUSD"
-  timeframe:         "TIMEFRAME_M1"
-  bars_to_fetch:     50000 #10080
-  contract_size:     100
-
-training:
-  test_size:         0.2
-  random_state:      42
-  rsi_period:        14
-  atr_period:        14
-  predict_threshold: 0.6
-  xgb_params:
-    max_depth:      5
-    learning_rate:  0.1
-    n_estimators:   100
-    objective:      "multi:softprob"
-    num_class:      3
-  xgb_param_grid:
-    max_depth:         [3, 5, 7]
-    learning_rate:     [0.01, 0.1, 0.2]
-    n_estimators:      [50, 100, 200]
-    subsample:         [0.7, 1.0]
-    colsample_bytree:  [0.7, 1.0]
-    reg_alpha:         [0.0, 0.1, 1.0]
-    reg_lambda:        [1.0, 5.0]
+  login: 25214081                        # รหัสบัญชี MT5
+  password: "h3MqkJ8>O%2G"               # รหัสผ่าน MT5
+  server: "demo.mt5tickmill.com"         # เซิร์ฟเวอร์ MT5
+  symbol: "XAUUSD"                       # สัญลักษณ์ที่เทรด
+  timeframe: 1                           # Timeframe: 1 = M1
+  bars_to_fetch: 50000                   # จำนวนแท่งข้อมูลย้อนหลัง
+  contract_size: 100                     # ขนาดสัญญา
+  reconnect_timeout: 10                  # วินาทีก่อนรีคอนเน็คท์ใหม่
 
 features:
   ict:
-    mss_lookback:       3
-    fvg_threshold:      0.5
+    mss_lookback: 5                      # จำนวนแท่งย้อนหลังสำหรับ MSS
+    fvg_threshold: 0.5                   # ค่าทริกเกอร์สำหรับ FVG
+    atr_period: 14                       # พารามิเตอร์ ATR
+    rsi_period: 14                       # พารามิเตอร์ RSI
   smc:
-    order_block_size:         10
-    liquidity_void_depth:     5
-    breaker_block_lookback:   8
-  trend_filter:
-    h1_ema_period:     50
+    order_block_size: 8                  # ขนาดหน้าต่าง Order Block
+    liquidity_void_depth: 20             # ความลึก Liquidity Void
+    breaker_block_lookback: 5            # ย้อนหลังสำหรับ Breaker Block
 
-risk:
-  max_risk_pct:         0.05
-  sl_multiplier:        2.5
-  tp2_multiplier:       8.0
-  trailing_multiplier:  1.5
-  min_profit_atr:       1.0
-  time_stop_mins:       240
-  adx:
-    window:             14
-    min_trend:          20
-    sideway:            15
-  max_trades_per_day:   20
+training:
+  test_size: 0.2                         # สัดส่วนข้อมูลทดสอบ (hold-out)
+  random_state: 42                       # ค่า seed สำหรับการสุ่ม
+  xgb_params:
+    max_depth: 4
+    n_estimators: 100
+    learning_rate: 0.1
 
-execution:
-  throttle_mins:        1
+cv:
+  window_size: 6    # เดือนสำหรับหน้าต่าง train
+  test_size: 1      # เดือนสำหรับหน้าต่าง test
+  step_size: 1      # เดือนที่เลื่อนไปข้างหน้าทุกรอบ
 
-rounding:
-  lot_decimals:         2
+tuning:
+  param_grid:
+    max_depth: [3,4,5]
+    n_estimators: [50,100,200]
+    learning_rate: [0.01, 0.1]
+  cv_folds: 5       # จำนวน fold สำหรับ TimeSeriesSplit
 
-dry_run: False
+ensemble:
+  estimators:
+    - ["xgb", "models/xgb_model.pkl"]
+    - ["lgbm", "models/lgbm_model.pkl"]
+    - ["rf",  "models/rf_model.pkl"]
+  voting: soft      # วิธีโหวต: soft
+  weights: [2,1,1]  # น้ำหนักของแต่ละโมเดล
+
+live:
+  throttle_mins: 1          # นาทีต่อการพรีดิกต์ครั้งหนึ่ง
+  max_trades_per_day: 20    # จำนวนออร์เดอร์สูงสุดต่อวัน
+  time_stop_mins: 240       # นาทีสูงสุดที่ถือออร์เดอร์
+  min_profit_atr: 1.0       # กำไรขั้นต่ำ (ATR) ที่เริ่ม trailing
+  trailing_multiplier: 1.5  # ทวีคูณ ATR สำหรับ trailing stop
+  max_risk_pct: 0.025       # ความเสี่ยงสูงสุด (%)
+  sl_multiplier: 2.0        # SL = ATR × ค่านี้
+  tp2_multiplier: 2.5       # TP2 = ATR × ค่านี้
+
+dry_run: false   # ถ้า true จะไม่ส่งคำสั่งจริง
